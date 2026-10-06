@@ -5,6 +5,7 @@ Professional Production Grade Interface
 import joblib
 import io
 import time
+import textwrap
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -43,14 +44,14 @@ CUSTOM_CSS = """
         background: linear-gradient(135deg, rgba(228, 27, 35, 0.2) 0%, rgba(30, 20, 50, 0.6) 50%, rgba(15, 20, 32, 0.9) 100%);
         border: 1px solid rgba(239, 68, 68, 0.3);
         border-radius: 20px;
-        padding: 28px 32px;
-        margin-bottom: 28px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
         box-shadow: 0 20px 40px -15px rgba(228, 27, 35, 0.3);
         backdrop-filter: blur(12px);
     }
     
     .hero-title {
-        font-size: 32px;
+        font-size: 30px;
         font-weight: 800;
         background: linear-gradient(90deg, #FF3B44 0%, #FF8A00 50%, #FFC700 100%);
         -webkit-background-clip: text;
@@ -60,61 +61,52 @@ CUSTOM_CSS = """
     }
     
     .hero-subtitle {
-        font-size: 15px;
+        font-size: 14px;
         color: #94a3b8;
         font-weight: 500;
-        margin-top: 6px;
+        margin-top: 4px;
     }
     
     /* Pitch Container Graphic */
     .pitch-container {
-        background: linear-gradient(180deg, #1e3a29 0%, #14281c 100%);
-        border: 2px solid rgba(52, 211, 153, 0.3);
-        border-radius: 20px;
-        padding: 24px;
-        margin: 20px 0;
+        background: linear-gradient(180deg, #193324 0%, #0f2117 100%);
+        border: 2px solid rgba(52, 211, 153, 0.35);
+        border-radius: 18px;
+        padding: 20px;
+        margin: 18px 0;
         box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 12px 30px rgba(0,0,0,0.4);
-        position: relative;
     }
     
     .pitch-header {
         text-align: center;
         color: #6ee7b7;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 1.5px;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
         border-bottom: 1px dashed rgba(110, 231, 183, 0.3);
         padding-bottom: 8px;
     }
 
     /* Player Cards */
     .player-card {
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .player-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(228, 27, 35, 0.5);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
     .player-card.captain {
         border-left: 5px solid #f59e0b;
-        background: linear-gradient(135deg, rgba(45, 34, 15, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+        background: linear-gradient(135deg, rgba(45, 34, 15, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
     }
     
     .player-card.vice-captain {
         border-left: 5px solid #06b6d4;
-        background: linear-gradient(135deg, rgba(14, 38, 48, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+        background: linear-gradient(135deg, rgba(14, 38, 48, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
     }
     
     /* Badges */
@@ -139,9 +131,9 @@ CUSTOM_CSS = """
     }
     
     .badge-role {
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.15);
         color: #e2e8f0;
-        font-weight: 600;
+        font-weight: 700;
         padding: 2px 7px;
         border-radius: 5px;
         font-size: 10px;
@@ -149,11 +141,11 @@ CUSTOM_CSS = """
     }
 
     .badge-pts {
-        background: linear-gradient(135deg, rgba(228, 27, 35, 0.25) 0%, rgba(228, 27, 35, 0.1) 100%);
+        background: linear-gradient(135deg, rgba(228, 27, 35, 0.3) 0%, rgba(228, 27, 35, 0.15) 100%);
         color: #ff6b6b;
         border: 1px solid rgba(228, 27, 35, 0.4);
-        font-weight: 700;
-        padding: 3px 9px;
+        font-weight: 800;
+        padding: 3px 8px;
         border-radius: 20px;
         font-size: 12px;
     }
@@ -163,13 +155,13 @@ CUSTOM_CSS = """
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
-        padding: 16px;
+        padding: 14px;
         text-align: center;
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
     }
     
     .kpi-val {
-        font-size: 26px;
+        font-size: 24px;
         font-weight: 800;
         color: #38bdf8;
     }
@@ -210,7 +202,7 @@ CUSTOM_CSS = """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # --- Top Header ---
-st.markdown("""
+header_html = textwrap.dedent("""
 <div class="hero-banner">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
@@ -227,7 +219,8 @@ st.markdown("""
         </div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""")
+st.markdown(header_html, unsafe_allow_html=True)
 
 # --- Navigation Tabs ---
 tab1, tab2 = st.tabs([
@@ -318,11 +311,18 @@ with tab1:
                 # --- KPI Metrics Cards ---
                 st.markdown("---")
                 k1, k2, k3, k4, k5 = st.columns(5)
-                k1.markdown(f'<div class="kpi-card"><div class="kpi-val">{total_exp_pts:.1f}</div><div class="kpi-lbl">Total Exp Points</div></div>', unsafe_allow_html=True)
-                k2.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#f59e0b;">{c_player["player"].split()[-1]}</div><div class="kpi-lbl">Captain (2x Pts)</div></div>', unsafe_allow_html=True)
-                k3.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#06b6d4;">{vc_player["player"].split()[-1]}</div><div class="kpi-lbl">Vice-Captain (1.5x)</div></div>', unsafe_allow_html=True)
-                k4.markdown(f'<div class="kpi-card"><div class="kpi-val">{t1_cnt} : {t2_cnt}</div><div class="kpi-lbl">Squad Balance</div></div>', unsafe_allow_html=True)
-                k5.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{res["seconds"]:.2f}s</div><div class="kpi-lbl">Response Time</div></div>', unsafe_allow_html=True)
+                
+                k1_h = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val">{total_exp_pts:.1f}</div><div class="kpi-lbl">Total Exp Points</div></div>')
+                k2_h = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#f59e0b;">{c_player["player"].split()[-1]}</div><div class="kpi-lbl">Captain (2x Pts)</div></div>')
+                k3_h = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#06b6d4;">{vc_player["player"].split()[-1]}</div><div class="kpi-lbl">Vice-Captain (1.5x)</div></div>')
+                k4_h = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val">{t1_cnt} : {t2_cnt}</div><div class="kpi-lbl">Squad Balance</div></div>')
+                k5_h = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{res["seconds"]:.2f}s</div><div class="kpi-lbl">Response Time</div></div>')
+                
+                k1.markdown(k1_h, unsafe_allow_html=True)
+                k2.markdown(k2_h, unsafe_allow_html=True)
+                k3.markdown(k3_h, unsafe_allow_html=True)
+                k4.markdown(k4_h, unsafe_allow_html=True)
+                k5.markdown(k5_h, unsafe_allow_html=True)
                 
                 # --- Tactical Pitch Layout ---
                 st.markdown('<div class="pitch-container"><div class="pitch-header">🏟️ DREAM11 RECOMMENDED XI FORMATION</div>', unsafe_allow_html=True)
@@ -332,7 +332,8 @@ with tab1:
                 for r_code, r_title in roles_order:
                     sub = team[team["role"] == r_code]
                     if not sub.empty:
-                        st.markdown(f'<div style="color: #94a3b8; font-weight: 700; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px;">{r_title} ({len(sub)})</div>', unsafe_allow_html=True)
+                        r_hdr = textwrap.dedent(f'<div style="color: #6ee7b7; font-weight: 700; font-size: 13px; margin: 12px 0 8px 0; letter-spacing: 1px;">{r_title} ({len(sub)})</div>')
+                        st.markdown(r_hdr, unsafe_allow_html=True)
                         cols = st.columns(min(len(sub), 4))
                         for idx, (_, p) in enumerate(sub.iterrows()):
                             col = cols[idx % len(cols)]
@@ -346,20 +347,20 @@ with tab1:
                                 
                             t_color = "#38bdf8" if p["team"] == t1 else "#f43f5e"
                             
-                            card_html = f"""
+                            card_html = textwrap.dedent(f"""
                             <div class="player-card {c_class}">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <span class="badge-role">{p['role']}</span>
-                                    {badge_html}
-                                </div>
-                                <div style="font-size: 15px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{p['player']}</div>
-                                <div style="font-size: 11px; color: {t_color}; font-weight: 700; margin-bottom: 6px;">{p['team']}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 11px; color: #94a3b8;">P(start): <b>{p['p_start']:.0%}</b></span>
-                                    <span class="badge-pts">{p['exp_pts']:.1f} Pts</span>
-                                </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span class="badge-role">{p['role']}</span>
+                            {badge_html}
                             </div>
-                            """
+                            <div style="font-size: 15px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{p['player']}</div>
+                            <div style="font-size: 11px; color: {t_color}; font-weight: 700; margin-bottom: 6px;">{p['team']}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 11px; color: #94a3b8;">P(start): <b>{p['p_start']:.0%}</b></span>
+                            <span class="badge-pts">{p['exp_pts']:.1f} Pts</span>
+                            </div>
+                            </div>
+                            """)
                             col.markdown(card_html, unsafe_allow_html=True)
                             with col.expander("💡 SHAP Driver"):
                                 st.caption(p["reason"])
@@ -436,11 +437,18 @@ with tab2:
             
             # KPI Cards
             k1, k2, k3, k4, k5 = st.columns(5)
-            k1.markdown(f'<div class="kpi-card"><div class="kpi-val">{summary["matches_evaluated"]}</div><div class="kpi-lbl">Matches Evaluated</div></div>', unsafe_allow_html=True)
-            k2.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#FF3B44;">{summary["MAE_total_points"]:.1f}</div><div class="kpi-lbl">Overall MAE</div></div>', unsafe_allow_html=True)
-            k3.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{summary["avg_dream_team_points"]:.1f}</div><div class="kpi-lbl">Avg Dream Team Pts</div></div>', unsafe_allow_html=True)
-            k4.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#38bdf8;">{summary["avg_predicted_team_actual_points"]:.1f}</div><div class="kpi-lbl">Predicted XI Actual Pts</div></div>', unsafe_allow_html=True)
-            k5.markdown(f'<div class="kpi-card"><div class="kpi-val">{summary["avg_overlap_with_dream_team"]:.1f} / 11</div><div class="kpi-lbl">Avg Squad Overlap</div></div>', unsafe_allow_html=True)
+            
+            k1_m = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val">{summary["matches_evaluated"]}</div><div class="kpi-lbl">Matches Evaluated</div></div>')
+            k2_m = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#FF3B44;">{summary["MAE_total_points"]:.1f}</div><div class="kpi-lbl">Overall MAE</div></div>')
+            k3_m = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{summary["avg_dream_team_points"]:.1f}</div><div class="kpi-lbl">Avg Dream Team Pts</div></div>')
+            k4_m = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val" style="color:#38bdf8;">{summary["avg_predicted_team_actual_points"]:.1f}</div><div class="kpi-lbl">Predicted XI Actual Pts</div></div>')
+            k5_m = textwrap.dedent(f'<div class="kpi-card"><div class="kpi-val">{summary["avg_overlap_with_dream_team"]:.1f} / 11</div><div class="kpi-lbl">Avg Squad Overlap</div></div>')
+            
+            k1.markdown(k1_m, unsafe_allow_html=True)
+            k2.markdown(k2_m, unsafe_allow_html=True)
+            k3.markdown(k3_m, unsafe_allow_html=True)
+            k4.markdown(k4_m, unsafe_allow_html=True)
+            k5.markdown(k5_m, unsafe_allow_html=True)
             
             st.markdown("#### 📄 Evaluated Benchmark Dataset")
             st.dataframe(res_df, width="stretch")
