@@ -196,6 +196,71 @@ CUSTOM_CSS = """
         font-weight: 700 !important;
     }
 
+    /* All Secondary / Preset Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        font-weight: 700 !important;
+        padding: 10px 16px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100%;
+    }
+    
+    .stButton > button p, .stButton > button span, .stButton > button div {
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        border-color: #38bdf8 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35) !important;
+    }
+    
+    .stButton > button:hover p, .stButton > button:hover span, .stButton > button:hover div {
+        color: #38bdf8 !important;
+    }
+    
+    /* Primary Action Buttons */
+    .stButton > button[kind="primary"], .stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #E41B23 0%, #FF3B44 100%) !important;
+        border: none !important;
+        box-shadow: 0 4px 16px rgba(228, 27, 35, 0.4) !important;
+    }
+    
+    .stButton > button[kind="primary"] p, .stButton > button[kind="primary"] span,
+    .stButton > button[data-testid="baseButton-primary"] p, .stButton > button[data-testid="baseButton-primary"] span {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+
+    .stButton > button[kind="primary"]:hover, .stButton > button[data-testid="baseButton-primary"]:hover {
+        background: linear-gradient(135deg, #FF3B44 0%, #FF5E62 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(228, 27, 35, 0.6) !important;
+    }
+    
+    /* Input Labels and Selectbox Styling */
+    .stSelectbox label, .stDateInput label, .stTextArea label, .stTextInput label, .stRadio label {
+        color: #e2e8f0 !important;
+        font-weight: 700 !important;
+    }
+    
+    div[data-baseweb="select"] > div {
+        background-color: rgba(15, 23, 42, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        border-radius: 10px !important;
+    }
+
+    div[data-baseweb="select"] span {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
