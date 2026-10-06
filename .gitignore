@@ -42,9 +42,12 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# Data & Models (if large/generated)
+# Data & Models (large/generated raw files)
 *.csv
 *.parquet
 *.pkl
 *.h5
 *.onnx
+*.zip
+src/data/raw/*.json
+src/data/raw/

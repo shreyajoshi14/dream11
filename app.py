@@ -1,66 +1,457 @@
-"""streamlit run app.py"""
-import joblib, pandas as pd, streamlit as st
-from src.config import ART_DIR, TRAIN_CUTOFF
+"""streamlit run app.py
+Dream11 Next-Gen Team Builder with Predictive AI - Inter IIT Tech Meet 13.0
+Professional Production Grade Interface
+"""
+import joblib
+import io
+import time
+import numpy as np
+import pandas as pd
+import streamlit as st
+from pathlib import Path
+
+from src.config import ART_DIR, TRAIN_CUTOFF, PROC_DIR
 from src.predict import recommend
 from src.model_ui import load_history, run_model_ui
 import narrate
 
-st.set_page_config(page_title="Dream11 Team Builder", page_icon="🏏", layout="wide")
-tab1, tab2 = st.tabs(["🏏 Product UI – Team Selection", "📊 Model UI – Evaluation"])
+# --- Page Configuration & Layout ---
+st.set_page_config(
+    page_title="Dream11 AI Team Builder | Inter IIT Tech Meet 13.0",
+    page_icon="🏆",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
+# Custom Dream11 High-End UI Theme & Animations
+CUSTOM_CSS = """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Main Canvas Background */
+    .stApp {
+        background: radial-gradient(circle at 50% 0%, #1a1226 0%, #0b0e14 70%, #07090e 100%);
+        color: #f8fafc;
+    }
+    
+    /* Header Branding Banner */
+    .hero-banner {
+        background: linear-gradient(135deg, rgba(228, 27, 35, 0.2) 0%, rgba(30, 20, 50, 0.6) 50%, rgba(15, 20, 32, 0.9) 100%);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 20px;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        box-shadow: 0 20px 40px -15px rgba(228, 27, 35, 0.3);
+        backdrop-filter: blur(12px);
+    }
+    
+    .hero-title {
+        font-size: 32px;
+        font-weight: 800;
+        background: linear-gradient(90deg, #FF3B44 0%, #FF8A00 50%, #FFC700 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+        letter-spacing: -0.8px;
+    }
+    
+    .hero-subtitle {
+        font-size: 15px;
+        color: #94a3b8;
+        font-weight: 500;
+        margin-top: 6px;
+    }
+    
+    /* Pitch Container Graphic */
+    .pitch-container {
+        background: linear-gradient(180deg, #1e3a29 0%, #14281c 100%);
+        border: 2px solid rgba(52, 211, 153, 0.3);
+        border-radius: 20px;
+        padding: 24px;
+        margin: 20px 0;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 12px 30px rgba(0,0,0,0.4);
+        position: relative;
+    }
+    
+    .pitch-header {
+        text-align: center;
+        color: #6ee7b7;
+        font-weight: 700;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 18px;
+        border-bottom: 1px dashed rgba(110, 231, 183, 0.3);
+        padding-bottom: 8px;
+    }
+
+    /* Player Cards */
+    .player-card {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .player-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(228, 27, 35, 0.5);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .player-card.captain {
+        border-left: 5px solid #f59e0b;
+        background: linear-gradient(135deg, rgba(45, 34, 15, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+    }
+    
+    .player-card.vice-captain {
+        border-left: 5px solid #06b6d4;
+        background: linear-gradient(135deg, rgba(14, 38, 48, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+    }
+    
+    /* Badges */
+    .badge-c {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: #000000;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-vc {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        color: #ffffff;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-role {
+        background: rgba(255, 255, 255, 0.12);
+        color: #e2e8f0;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        text-transform: uppercase;
+    }
+
+    .badge-pts {
+        background: linear-gradient(135deg, rgba(228, 27, 35, 0.25) 0%, rgba(228, 27, 35, 0.1) 100%);
+        color: #ff6b6b;
+        border: 1px solid rgba(228, 27, 35, 0.4);
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    
+    /* KPI Metric Cards */
+    .kpi-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    
+    .kpi-val {
+        font-size: 26px;
+        font-weight: 800;
+        color: #38bdf8;
+    }
+    
+    .kpi-lbl {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 700;
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Streamlit Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
+        background-color: rgba(15, 23, 42, 0.7);
+        padding: 8px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px;
+        color: #94a3b8;
+        font-weight: 600;
+        padding: 12px 24px;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #E41B23 0%, #FF3B44 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# --- Top Header ---
+st.markdown("""
+<div class="hero-banner">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div class="hero-title">🏆 DREAM11 NEXT-GEN TEAM BUILDER</div>
+            <div class="hero-subtitle">Inter IIT Tech Meet 13.0 · Predictive Machine Learning & GenAI Explainability Engine</div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                🟢 PREDICTIVE MODEL LOADED
+            </span>
+            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                🛡️ STRICT CUTOFF: 2024-06-30
+            </span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# --- Navigation Tabs ---
+tab1, tab2 = st.tabs([
+    "🏏 Product UI – Team Selection & AI Coach",
+    "📊 Model UI – Benchmarking & Evaluation"
+])
+
+# ==========================================
+# TAB 1: PRODUCT UI
+# ==========================================
 with tab1:
-    path = ART_DIR / "ProductUI_Model.pkl"
-    if not path.exists():
-        st.error("Run `python -m src.build_all` first to create model_artifacts/ProductUI_Model.pkl")
+    model_path = ART_DIR / "ProductUI_Model.pkl"
+    if not model_path.exists():
+        st.error("⚠️ Model file `ProductUI_Model.pkl` not found in `model_artifacts/`. Run `python -m src.build_all` first.")
     else:
         @st.cache_resource
-        def get_bundle():
-            return joblib.load(path)
-        b = get_bundle()
-        teams = sorted(b["team_info"], key=lambda t: b["team_info"][t]["last_match"], reverse=True)
-        c1, c2, c3 = st.columns(3)
-        t1 = c1.selectbox("Team 1 (exact Cricsheet name)", teams, index=0)
-        t2 = c2.selectbox("Team 2", teams, index=1)
-        date = c3.date_input("Match date", pd.Timestamp("2024-07-18"), min_value=pd.Timestamp("2024-07-01"))
-        with st.expander("Optional: venue, format, custom squads"):
-            venues = b["team_info"][t1]["venues"]
-            venue = st.selectbox("Venue", venues)
-            fmt = st.selectbox("Format", ["t20", "odi", "test"], index=["t20", "odi", "test"].index(b["team_info"][t1]["fmt"]))
-            sq1 = st.text_area(f"{t1} squad (one name per line; blank = auto from recent matches)")
-            sq2 = st.text_area(f"{t2} squad")
-        if st.button("Build my Dream Team", type="primary") and t1 != t2:
-            squads = {t: [x.strip() for x in s.splitlines() if x.strip()] for t, s in ((t1, sq1), (t2, sq2)) if s.strip()} or None
-            r = recommend(b, t1, t2, date, venue=venue, fmt=fmt, squads=squads)
-            team = r["team"]
-            st.caption(f"Generated in {r['seconds']:.2f}s · model trained on data up to {b['meta']['train_end']} (cutoff {TRAIN_CUTOFF})")
-            st.subheader("Your 11")
-            show = team[["captain", "player", "team", "role", "p_start", "pts_pred", "exp_pts", "reason"]].rename(columns={
-                "captain": "C/VC", "p_start": "P(starts)", "pts_pred": "Pts if plays", "exp_pts": "Expected pts", "reason": "Why (top SHAP drivers)"})
-            st.dataframe(show.round(2), hide_index=True, width="stretch")
-            st.bar_chart(team.set_index("player")["exp_pts"])
-            txt = narrate.story(team, t1, t2, venue)
-            st.subheader("🎙️ Guided walkthrough")
-            st.write(txt)
-            a = narrate.audio_bytes(txt)
-            if a: st.audio(a, format="audio/mp3")
-            else: st.caption("Audio needs internet (gTTS); text walkthrough shown above.")
-            with st.expander("Whole squad ranking"):
-                st.dataframe(r["squad"][["player", "team", "role", "p_start", "pts_pred", "exp_pts"]].round(2), hide_index=True)
-        st.subheader("What drives the model (global SHAP importance)")
-        st.bar_chart(b["importance"].head(15).set_index("label")["mean_abs_shap"])
+        def get_model():
+            return joblib.load(model_path)
+            
+        bundle = get_model()
+        teams = sorted(bundle["team_info"], key=lambda t: bundle["team_info"][t]["last_match"], reverse=True)
+        
+        # --- Quick Preset Selector ---
+        st.markdown("#### ⚡ Quick Match Selector & Setup")
+        
+        preset_cols = st.columns(4)
+        if preset_cols[0].button("🇱🇰 Colombo vs Kandy"):
+            st.session_state["t1"] = "Colombo Strikers"
+            st.session_state["t2"] = "Kandy Falcons"
+            st.session_state["date"] = pd.Timestamp("2024-07-18")
+        if preset_cols[1].button("🇮🇳 India vs Australia"):
+            st.session_state["t1"] = "India"
+            st.session_state["t2"] = "Australia"
+            st.session_state["date"] = pd.Timestamp("2024-07-15")
+        if preset_cols[2].button("🇬🇧 London Spirit vs Trent Rockets"):
+            st.session_state["t1"] = "London Spirit"
+            st.session_state["t2"] = "Trent Rockets"
+            st.session_state["date"] = pd.Timestamp("2024-08-01")
+        if preset_cols[3].button("🇱🇰 Jaffna Kings vs Galle Marvels"):
+            st.session_state["t1"] = "Jaffna Kings"
+            st.session_state["t2"] = "Galle Marvels"
+            st.session_state["date"] = pd.Timestamp("2024-07-05")
+            
+        # Match Input Controls
+        c1, c2, c3 = st.columns([1.2, 1.2, 1])
+        
+        default_t1 = st.session_state.get("t1", teams[0])
+        default_t2 = st.session_state.get("t2", teams[1] if len(teams) > 1 else teams[0])
+        default_date = st.session_state.get("date", pd.Timestamp("2024-07-18"))
+        
+        idx1 = teams.index(default_t1) if default_t1 in teams else 0
+        idx2 = teams.index(default_t2) if default_t2 in teams else (1 if len(teams) > 1 else 0)
+        
+        t1 = c1.selectbox("Team 1 (Exact Cricsheet Name)", teams, index=idx1)
+        t2 = c2.selectbox("Team 2 (Exact Cricsheet Name)", teams, index=idx2)
+        match_date = c3.date_input("Upcoming Match Date", default_date, min_value=pd.Timestamp("2024-07-01"))
 
+        # Advanced Context Options
+        with st.expander("⚙️ Additional Match Conditions & Custom Squad Input"):
+            venues = bundle["team_info"].get(t1, {}).get("venues", ["NA"])
+            c_v1, c_v2, c_v3 = st.columns(3)
+            venue = c_v1.selectbox("Stadium / Venue", venues)
+            fmt = c_v2.selectbox("Match Format", ["t20", "odi", "test"], index=["t20", "odi", "test"].index(bundle["team_info"][t1].get("fmt", "t20")))
+            pitch_type = c_v3.selectbox("Pitch Condition", ["Balanced Pitch", "Batting Friendly", "Bowling / Spin Friendly"])
+            
+            sq1 = st.text_area(f"{t1} Custom Squad (1 player name per line; leave blank for auto-inference from recent matches)")
+            sq2 = st.text_area(f"{t2} Custom Squad")
+            
+        btn = st.button("🔥 BUILD OPTIMAL DREAM11 TEAM NOW", type="primary")
+        
+        if btn or "auto_run" not in st.session_state:
+            st.session_state["auto_run"] = True
+            if t1 == t2:
+                st.error("Please select two different teams.")
+            else:
+                squads = {t: [x.strip() for x in s.splitlines() if x.strip()] for t, s in ((t1, sq1), (t2, sq2)) if s.strip()} or None
+                
+                with st.spinner("🤖 Optimizing MILP Team Selection under Dream11 constraints..."):
+                    res = recommend(bundle, t1, t2, match_date, venue=venue, fmt=fmt, squads=squads)
+                
+                team = res["team"]
+                total_exp_pts = team["exp_pts"].sum()
+                c_player = team[team["captain"] == "C"].iloc[0] if "C" in team["captain"].values else team.iloc[0]
+                vc_player = team[team["captain"] == "VC"].iloc[0] if "VC" in team["captain"].values else team.iloc[1]
+                t1_cnt = len(team[team["team"] == t1])
+                t2_cnt = len(team[team["team"] == t2])
+                
+                # --- KPI Metrics Cards ---
+                st.markdown("---")
+                k1, k2, k3, k4, k5 = st.columns(5)
+                k1.markdown(f'<div class="kpi-card"><div class="kpi-val">{total_exp_pts:.1f}</div><div class="kpi-lbl">Total Exp Points</div></div>', unsafe_allow_html=True)
+                k2.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#f59e0b;">{c_player["player"].split()[-1]}</div><div class="kpi-lbl">Captain (2x Pts)</div></div>', unsafe_allow_html=True)
+                k3.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#06b6d4;">{vc_player["player"].split()[-1]}</div><div class="kpi-lbl">Vice-Captain (1.5x)</div></div>', unsafe_allow_html=True)
+                k4.markdown(f'<div class="kpi-card"><div class="kpi-val">{t1_cnt} : {t2_cnt}</div><div class="kpi-lbl">Squad Balance</div></div>', unsafe_allow_html=True)
+                k5.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{res["seconds"]:.2f}s</div><div class="kpi-lbl">Response Time</div></div>', unsafe_allow_html=True)
+                
+                # --- Tactical Pitch Layout ---
+                st.markdown('<div class="pitch-container"><div class="pitch-header">🏟️ DREAM11 RECOMMENDED XI FORMATION</div>', unsafe_allow_html=True)
+                
+                roles_order = [("WK", "🧤 WICKET-KEEPERS"), ("BAT", "🏏 BATSMEN"), ("AR", "⚡ ALL-ROUNDERS"), ("BOWL", "⚾ BOWLERS")]
+                
+                for r_code, r_title in roles_order:
+                    sub = team[team["role"] == r_code]
+                    if not sub.empty:
+                        st.markdown(f'<div style="color: #94a3b8; font-weight: 700; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px;">{r_title} ({len(sub)})</div>', unsafe_allow_html=True)
+                        cols = st.columns(min(len(sub), 4))
+                        for idx, (_, p) in enumerate(sub.iterrows()):
+                            col = cols[idx % len(cols)]
+                            
+                            c_class = "captain" if p["captain"] == "C" else ("vice-captain" if p["captain"] == "VC" else "")
+                            badge_html = ""
+                            if p["captain"] == "C":
+                                badge_html = '<span class="badge-c">C (2x)</span>'
+                            elif p["captain"] == "VC":
+                                badge_html = '<span class="badge-vc">VC (1.5x)</span>'
+                                
+                            t_color = "#38bdf8" if p["team"] == t1 else "#f43f5e"
+                            
+                            card_html = f"""
+                            <div class="player-card {c_class}">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span class="badge-role">{p['role']}</span>
+                                    {badge_html}
+                                </div>
+                                <div style="font-size: 15px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{p['player']}</div>
+                                <div style="font-size: 11px; color: {t_color}; font-weight: 700; margin-bottom: 6px;">{p['team']}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 11px; color: #94a3b8;">P(start): <b>{p['p_start']:.0%}</b></span>
+                                    <span class="badge-pts">{p['exp_pts']:.1f} Pts</span>
+                                </div>
+                            </div>
+                            """
+                            col.markdown(card_html, unsafe_allow_html=True)
+                            with col.expander("💡 SHAP Driver"):
+                                st.caption(p["reason"])
+                                
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # --- AI Voice & Performance Visualizer ---
+                st.markdown("---")
+                left_col, right_col = st.columns([1.2, 1])
+                
+                with left_col:
+                    st.markdown("#### 📈 Player Expected Points Breakdown")
+                    st.bar_chart(team.set_index("player")["exp_pts"], color="#FF3B44")
+                    
+                with right_col:
+                    st.markdown("#### 🎙️ Dream11 AI Coach & Voice Walkthrough")
+                    story_text = narrate.story(team, t1, t2, venue)
+                    st.info(story_text)
+                    
+                    audio_b = narrate.audio_bytes(story_text)
+                    if audio_b:
+                        st.audio(audio_b, format="audio/mp3")
+
+                # Full Candidate Squad Inspection
+                with st.expander("🔍 Inspect Full Squad Ranking Table"):
+                    st.dataframe(
+                        res["squad"][["player", "team", "role", "p_start", "pts_pred", "exp_pts"]]
+                        .rename(columns={"p_start": "P(starts)", "pts_pred": "Pts if plays", "exp_pts": "Expected Pts"})
+                        .round(2),
+                        hide_index=True,
+                        width="stretch"
+                    )
+
+        # Global Feature Importance Chart
+        st.markdown("---")
+        st.markdown("### 🧠 What Drives the AI Model (Global SHAP Feature Importance)")
+        st.bar_chart(bundle["importance"].head(12).set_index("label")["mean_abs_shap"], color="#38BDF8")
+
+
+# ==========================================
+# TAB 2: MODEL UI (BENCHMARKING & EVALUATION)
+# ==========================================
 with tab2:
-    st.write("Train on a period, predict a test period, export the CSV described in the problem statement.")
-    a, b_ = st.columns(2)
-    tr = a.text_input("Training period", "2000-01-01 to 2024-05-30")
-    te = b_.text_input("Testing period", "2024-08-01 to 2024-09-22")
-    mode = st.radio("Squad assumption", ["proxy", "xi"], horizontal=True,
-                    help="proxy = squad inferred from each team's last 10 matches (honest). xi = the 22 who actually played (upper bound).")
-    if st.button("Train + evaluate"):
-        (ts, tend), (vs, vend) = [x.split(" to ") for x in (tr, te)]
-        bar = st.progress(0.0)
-        res, summ, _ = run_model_ui(load_history(), ts, tend, vs, vend, mode, progress=bar.progress)
-        st.json(summ)
-        st.dataframe(res, width="stretch")
-        st.download_button("Download CSV", res.to_csv(index=False), f"predictions_{vs}_{vend}.csv")
-        st.success(f"Saved model_{tend}.pkl and training_data_{tend}.csv")
+    st.markdown("### 📊 Model Evaluation & Benchmarking Dashboard")
+    st.write("Assess machine learning accuracy across historical training and testing periods, compute Mean Absolute Error (MAE) against actual Dream Teams, and export official CSV reports.")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        tr_range = st.text_input("Training Period Range", "2000-01-01 to 2024-06-30")
+    with col_b:
+        te_range = st.text_input("Testing Period Range", "2024-07-01 to 2024-09-22")
+        
+    mode_sel = st.radio(
+        "Squad Selection Mode", 
+        ["proxy", "xi"], 
+        horizontal=True,
+        help="proxy = squad inferred from each team's last 10 matches (honest, default). xi = candidates are actual 22 players."
+    )
+    
+    eval_btn = st.button("🚀 RUN BENCHMARK EVALUATION & GENERATE CSV")
+    
+    if eval_btn:
+        try:
+            (ts, tend), (vs, vend) = [x.strip() for x in tr_range.split(" to ")], [x.strip() for x in te_range.split(" to ")]
+            
+            st.info(f"Evaluating matches from `{vs}` to `{vend}` against model trained on `{ts}` to `{tend}`...")
+            progress_bar = st.progress(0.0)
+            
+            with st.spinner("Processing match-by-match evaluations..."):
+                hist = load_history()
+                res_df, summary, _ = run_model_ui(hist, ts, tend, vs, vend, mode_sel, progress=progress_bar.progress)
+            
+            st.success("✅ Evaluation Successfully Completed!")
+            
+            # KPI Cards
+            k1, k2, k3, k4, k5 = st.columns(5)
+            k1.markdown(f'<div class="kpi-card"><div class="kpi-val">{summary["matches_evaluated"]}</div><div class="kpi-lbl">Matches Evaluated</div></div>', unsafe_allow_html=True)
+            k2.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#FF3B44;">{summary["MAE_total_points"]:.1f}</div><div class="kpi-lbl">Overall MAE</div></div>', unsafe_allow_html=True)
+            k3.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#10b981;">{summary["avg_dream_team_points"]:.1f}</div><div class="kpi-lbl">Avg Dream Team Pts</div></div>', unsafe_allow_html=True)
+            k4.markdown(f'<div class="kpi-card"><div class="kpi-val" style="color:#38bdf8;">{summary["avg_predicted_team_actual_points"]:.1f}</div><div class="kpi-lbl">Predicted XI Actual Pts</div></div>', unsafe_allow_html=True)
+            k5.markdown(f'<div class="kpi-card"><div class="kpi-val">{summary["avg_overlap_with_dream_team"]:.1f} / 11</div><div class="kpi-lbl">Avg Squad Overlap</div></div>', unsafe_allow_html=True)
+            
+            st.markdown("#### 📄 Evaluated Benchmark Dataset")
+            st.dataframe(res_df, width="stretch")
+            
+            csv_data = res_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Benchmark Results CSV",
+                data=csv_data,
+                file_name=f"predictions_{vs}_{vend}.csv",
+                mime="text/csv"
+            )
+            
+        except Exception as e:
+            st.error(f"Error during evaluation: {e}")
