@@ -222,27 +222,6 @@ header_html = textwrap.dedent("""
 st.markdown(header_html, unsafe_allow_html=True)
 
 # --- Sidebar: Competition Rules & Checklist ---
-with st.sidebar:
-    st.markdown("### 📋 PDF Requirements Checklist")
-    st.markdown("""
-    - ✅ **Two Interfaces**: Product UI & Model UI
-    - ✅ **Strict Training Cutoff**: Data $\le$ 2024-06-30
-    - ✅ **Cricsheet Data Only**: 22,983 match JSONs
-    - ✅ **Exact Dream11 Composition**:
-      - 11 Players total
-      - 1–8 Batsmen
-      - 1–8 Bowlers
-      - 1–8 All-Rounders
-      - 1–8 Wicket-Keepers
-      - $\ge$ 1 Player from each team
-      - Captain (2x) & Vice-Captain (1.5x)
-    - ✅ **Explainable AI (XAI)**: SHAP driver breakdown
-    - ✅ **Audio Guidance**: AI Coach narration
-    - ✅ **Speed Constraint**: Execution < 10 seconds
-    - ✅ **Evaluation Metric**: PDF-compliant Team MAE
-    """)
-    st.markdown("---")
-    st.caption("Inter IIT Tech Meet 13.0 - Problem Statement M13")
 
 # --- Navigation Tabs ---
 tab1, tab2 = st.tabs([
