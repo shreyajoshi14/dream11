@@ -486,7 +486,7 @@ with tab1:
 # ==========================================
 with tab2:
     st.markdown("### 📊 Model UI – Performance Analysis & Evaluation")
-    st.markdown("""
+    st.markdown(r"""
     Evaluators can assess model performance across custom historical training and testing periods, compute **Mean Absolute Error (MAE)** against actual Dream Teams, and export official CSV reports.
     
     $$\text{MAE} = \left| \text{Total Dream Team Fantasy Points} - \text{Total Fantasy Points of Predicted Team} \right|$$
@@ -494,7 +494,7 @@ with tab2:
     
     col_a, col_b = st.columns(2)
     with col_a:
-        tr_range = st.text_input("Training Period Range (Strictly $\le$ 2024-06-30)", "2000-01-01 to 2024-06-30")
+        tr_range = st.text_input(r"Training Period Range (Strictly $\le$ 2024-06-30)", "2000-01-01 to 2024-06-30")
     with col_b:
         te_range = st.text_input("Testing Period Range (Unseen matches)", "2024-07-01 to 2024-09-22")
         
