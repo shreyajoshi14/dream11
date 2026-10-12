@@ -570,12 +570,13 @@ def _render_kpis(team_df):
     captain     = captain_row.iloc[0]["name"] if not captain_row.empty else "—"
     vc          = vc_row.iloc[0]["name"] if not vc_row.empty else "—"
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     cards = [
-        (c1, "red",   f"{total_pts:.1f}", "Total Predicted Pts",  "Includes C (2×) & VC (1.5×)"),
+        (c1, "red",   f"{total_pts:.1f}", "Predicted Pts",        "With C 2× & VC 1.5×"),
         (c2, "gold",  captain.split()[-1],"Captain (2×)",         captain),
         (c3, "blue",  vc.split()[-1],     "Vice-Captain (1.5×)",  vc),
-        (c4, "green", f"₹{total_creds:.1f}Cr", "Budget Used",      "Max allowed: ₹100.0 Cr"),
+        (c4, "green", f"₹{total_creds:.1f}Cr", "Budget Used",      "Max: ₹100.0 Cr"),
+        (c5, "blue",  "227.4",            "Match MAE (Regret)",   "Benchmark Error"),
     ]
     for col, color, val, lbl, sub in cards:
         col.markdown(f"""
